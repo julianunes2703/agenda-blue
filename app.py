@@ -23,17 +23,20 @@ filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
 # Remover duplicatas com base na 'Data' e 'Título' da reunião
 filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
 
-# Mostrar gráfico de participação dos funcionários
-# Contar o número de reuniões em que cada participante esteve
-# Dividir os participantes
-participants = filtered_df['Participantes'].str.split(",").explode().str.strip()
+# Limpeza dos dados de participantes: Remover e-mails e obter nomes
+def extract_names(participants):
+    # Aqui você pode adicionar um mapeamento de e-mails para nomes, se necessário
+    return [p.split('@')[0] for p in participants.split(",")]
 
-# Contar a participação de cada pessoa
-participant_counts = participants.value_counts().reset_index()
-participant_counts.columns = ['Participante', 'Reuniões']
+# Aplicar a função para limpar os dados
+filtered_df['Participantes'] = filtered_df['Participantes'].apply(extract_names)
+
+# Explodir os participantes para uma linha por nome
+participants = filtered_df['Participantes'].explode().value_counts().reset_index()
+participants.columns = ['Participante', 'Reuniões']
 
 # Gráfico de barras com a quantidade de reuniões por participante
-chart = alt.Chart(participant_counts).mark_bar().encode(
+chart = alt.Chart(participants).mark_bar().encode(
     x=alt.X('Participante:N', title='Participante'),
     y=alt.Y('Reuniões:Q', title='Número de Reuniões'),
     color='Participante:N',
@@ -47,7 +50,7 @@ chart = alt.Chart(participant_counts).mark_bar().encode(
 st.altair_chart(chart, use_container_width=True)
 
 # Exibir gráfico de pizza de participação
-pie_chart = alt.Chart(participant_counts).mark_arc().encode(
+pie_chart = alt.Chart(participants).mark_arc().encode(
     theta='Reuniões:Q',
     color='Participante:N',
     tooltip=['Participante:N', 'Reuniões:Q']
@@ -61,10 +64,10 @@ st.altair_chart(pie_chart, use_container_width=True)
 st.write("Detalhamento das Reuniões por Participante:")
 
 # Agrupar e exibir reuniões por participante
-for participant in participant_counts['Participante']:
+for participant in participants['Participante']:
     st.write(f"**{participant}**:")
     # Filtrar todas as reuniões em que o participante esteve presente
-    participant_meetings = filtered_df[filtered_df['Participantes'].str.contains(participant)]
+    participant_meetings = filtered_df[filtered_df['Participantes'].apply(lambda x: participant in x)]
     for _, row in participant_meetings.iterrows():
         st.write(f"- **{row['Título']}** em {row['Data'].strftime('%d/%m/%Y')}")
     st.write("---")
