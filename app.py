@@ -20,30 +20,16 @@ end_date = pd.to_datetime(end_date)
 # Filtrar os dados com base na seleção de datas
 filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
 
-# Lista de e-mails de funcionários (remova o "Sem convidados" e outros e-mails indesejados)
-emails_funcionarios = [
-    "fernando@consultingblue.com.br",
-    "julia@consultingblue.com.br",
-    "rafael@consultingblue.com.br",
-    "vitoria@consultingblue.com.br",
-    "igor@consultingblue.com.br",
-    "amanda@consultingblue.com.br",
-    "david@consultingblue.com.br",
-    "bpo@consultingblue.com.br"
-]
-
-# Filtrar as reuniões que possuem pelo menos um funcionário (e-mail da lista) como participante
-filtered_df = filtered_df[filtered_df['Participantes'].apply(lambda x: any(email in x for email in emails_funcionarios))]
-
 # Remover duplicatas com base na 'Data' e 'Título' da reunião
 filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
 
-# Limpeza dos dados de participantes: Remover e-mails e obter nomes
-def extract_names(participants):
-    return [p.split('@')[0] for p in participants.split(",")]
+# Filtrar os participantes que têm e-mails com o domínio 'consultingblue.com.br'
+def filter_participants_by_email(participants):
+    # Filtra apenas os e-mails com o domínio 'consultingblue.com.br'
+    return [p for p in participants.split(",") if "@consultingblue.com.br" in p]
 
-# Aplicar a função para limpar os dados
-filtered_df['Participantes'] = filtered_df['Participantes'].apply(extract_names)
+# Aplicar o filtro nos participantes
+filtered_df['Participantes'] = filtered_df['Participantes'].apply(filter_participants_by_email)
 
 # Explodir os participantes para uma linha por nome
 participants = filtered_df['Participantes'].explode().value_counts().reset_index()
