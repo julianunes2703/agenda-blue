@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import altair as alt
 
 # Carregar os dados
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsw_WO1DoVu76FQ7rhs1S8CPBo0FRQ7VmoCpZBGV9WTsRdZm7TduvnKQnTVKR40vbMzQU3ypTj8Ls7/pub?gid=212895287&single=true&output=csv"
@@ -23,48 +22,15 @@ filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
 # Remover duplicatas com base na 'Data' e 'Título' da reunião
 filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
 
-# Exibir tabela interativa com cores e uma boa organização
-st.write(f"Reuniões de {start_date.date()} a {end_date.date()}")
-st.dataframe(filtered_df[['Data', 'Título', 'Participantes']], use_container_width=True)
+# Exibir as reuniões por participante
+participants = sorted(filtered_df['Participantes'].unique())
 
-# Melhorar o gráfico com um visual mais bonito
-chart = alt.Chart(filtered_df).mark_bar().encode(
-    x='Data:T',
-    y='count():Q',
-    color='Título:N',
-    tooltip=['Data:T', 'count():Q', 'Título:N']
-).properties(
-    title="Número de Reuniões por Dia",
-    width=700,
-    height=400
-).configure_view(
-    strokeWidth=0  # Retira a borda do gráfico
-)
-
-st.altair_chart(chart, use_container_width=True)
-
-# Melhorar a exibição dos participantes
-st.write("Detalhamento dos Participantes:")
-for index, row in filtered_df.iterrows():
-    st.write(f"**{row['Título']}** em {row['Data'].strftime('%d/%m/%Y')}:")
-    participantes = row['Participantes'].split(",")  # Separando participantes
-    for participante in participantes:
-        st.write(f"- {participante.strip()}")
+# Criar uma lista para exibir as reuniões por participante
+st.write("Reuniões por Participante:")
+for participant in participants:
+    st.write(f"**{participant}**:")
+    # Filtrar todas as reuniões em que o participante esteve presente
+    meetings = filtered_df[filtered_df['Participantes'].str.contains(participant)]
+    for _, row in meetings.iterrows():
+        st.write(f"- **{row['Título']}** em {row['Data'].strftime('%d/%m/%Y')}")
     st.write("---")
-
-# Adicionando um toque de estilo
-st.markdown("""
-    <style>
-        .streamlit-expanderHeader {
-            font-size: 18px;
-            font-weight: bold;
-            color: #3D5AFE;
-        }
-        .css-1v3fvcr {
-            background-color: #F1F1F1;
-        }
-        .css-1c6zqme {
-            background-color: #E0E0E0;
-        }
-    </style>
-""", unsafe_allow_html=True)
