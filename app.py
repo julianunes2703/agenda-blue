@@ -4,7 +4,6 @@ import altair as alt
 
 # Carregar os dados
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsw_WO1DoVu76FQ7rhs1S8CPBo0FRQ7VmoCpZBGV9WTsRdZm7TduvnKQnTVKR40vbMzQU3ypTj8Ls7/pub?gid=212895287&single=true&output=csv"
-
 df = pd.read_csv(CSV_URL)
 
 # Garantir que a coluna 'Data' seja do tipo datetime
@@ -20,6 +19,9 @@ end_date = pd.to_datetime(end_date)
 
 # Filtrar os dados com base na seleção de datas
 filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
+
+# Remover duplicatas com base na 'Data' e 'Título' da reunião
+filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
 
 # Exibir tabela interativa
 st.write(f"Reuniões de {start_date.date()} a {end_date.date()}")
