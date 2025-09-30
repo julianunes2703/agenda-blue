@@ -1,81 +1,37 @@
-import pandas as pd
 import streamlit as st
-import altair as alt
+import pandas as pd
 
-# Carregar os dados
+# Carregar dados diretamente do CSV do Google Sheets
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsw_WO1DoVu76FQ7rhs1S8CPBo0FRQ7VmoCpZBGV9WTsRdZm7TduvnKQnTVKR40vbMzQU3ypTj8Ls7/pub?gid=212895287&single=true&output=csv"
 df = pd.read_csv(CSV_URL)
 
-# Garantir que a coluna 'Data' seja do tipo datetime
-df['Data'] = pd.to_datetime(df['Data'], format='%d/%m/%Y', errors='coerce')
+# Verificar as primeiras linhas para garantir que os dados foram carregados corretamente
+st.write(df.head())
 
-# Filtros de data
-start_date = st.date_input("Data Inicial", min_value=df['Data'].min(), max_value=df['Data'].max())
-end_date = st.date_input("Data Final", min_value=df['Data'].min(), max_value=df['Data'].max())
+# Filtrar os dados pela data selecionada
+data_selecionada = st.date_input("Selecione a data", pd.to_datetime("2025-09-30"))
 
-# Convertendo start_date e end_date para datetime para garantir compatibilidade
-start_date = pd.to_datetime(start_date)
-end_date = pd.to_datetime(end_date)
+# Verifique se os nomes das colunas estão corretos
+df['data'] = pd.to_datetime(df['data'])  # Certifique-se de que a data está no formato correto
 
-# Filtrar os dados com base na seleção de datas
-filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
+# Filtrando o DataFrame para a data escolhida
+df_filtrado = df[df['data'] == data_selecionada.strftime('%Y-%m-%d')]
 
-# Função para filtrar apenas os participantes com e-mail "consultingblue.com.br"
-def filter_participants_by_email(participants):
-    # Verifica se algum dos participantes tem o domínio "consultingblue.com.br"
-    return any('@consultingblue.com.br' in p for p in participants.split(','))
+# Mostrar as reuniões filtradas
+st.subheader(f'Reuniões para o dia {data_selecionada}')
+st.write(df_filtrado[['data', 'titulo', 'inicio', 'fim', 'empresa', 'funcionario', 'participantes', 'link']])
 
-# Aplicar a função de filtro para manter apenas reuniões com participantes do domínio "consultingblue.com.br"
-filtered_df = filtered_df[filtered_df['Participantes'].apply(filter_participants_by_email)]
+# Exibir gráfico de reuniões por empresa
+st.subheader('Reuniões por Empresa')
+reunioes_por_empresa = df_filtrado['empresa'].value_counts()
+st.bar_chart(reunioes_por_empresa)
 
-# Remover duplicatas com base na 'Data' e 'Título' da reunião
-filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
+# Exibir gráfico de reuniões por funcionário
+st.subheader('Reuniões por Funcionário')
+reunioes_por_funcionario = df_filtrado['funcionario'].value_counts()
+st.bar_chart(reunioes_por_funcionario)
 
-# Limpeza dos dados de participantes: Remover e-mails e obter nomes
-def extract_names(participants):
-    # Extrai o nome do participante removendo a parte do e-mail
-    return [p.split('@')[0] for p in participants.split(",")]
-
-# Aplicar a função para limpar os dados
-filtered_df['Participantes'] = filtered_df['Participantes'].apply(extract_names)
-
-# Explodir os participantes para uma linha por nome
-participants = filtered_df['Participantes'].explode().value_counts().reset_index()
-participants.columns = ['Participante', 'Reuniões']
-
-# Gráfico de barras com a quantidade de reuniões por participante
-chart = alt.Chart(participants).mark_bar().encode(
-    x=alt.X('Participante:N', title='Participante'),
-    y=alt.Y('Reuniões:Q', title='Número de Reuniões'),
-    color='Participante:N',
-    tooltip=['Participante:N', 'Reuniões:Q']
-).properties(
-    title="Número de Reuniões por Participante",
-    width=800,
-    height=400
-)
-
-st.altair_chart(chart, use_container_width=True)
-
-# Exibir gráfico de pizza de participação
-pie_chart = alt.Chart(participants).mark_arc().encode(
-    theta='Reuniões:Q',
-    color='Participante:N',
-    tooltip=['Participante:N', 'Reuniões:Q']
-).properties(
-    title="Participação de Reuniões por Participante"
-)
-
-st.altair_chart(pie_chart, use_container_width=True)
-
-# Mostrar os detalhes das reuniões por participante
-st.write("Detalhamento das Reuniões por Participante:")
-
-# Agrupar e exibir reuniões por participante
-for participant in participants['Participante']:
-    st.write(f"**{participant}**:")
-    # Filtrar todas as reuniões em que o participante esteve presente
-    participant_meetings = filtered_df[filtered_df['Participantes'].apply(lambda x: participant in x)]
-    for _, row in participant_meetings.iterrows():
-        st.write(f"- **{row['Título']}** em {row['Data'].strftime('%d/%m/%Y')}")
-    st.write("---")
+# Exibição de links para as reuniões
+st.subheader('Links das Reuniões')
+for _, row in df_filtrado.iterrows():
+    st.write(f"Reunião: {row['titulo']} | Link: {row['link']}")
