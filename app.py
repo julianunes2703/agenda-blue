@@ -23,22 +23,27 @@ filtered_df = df[(df['Data'] >= start_date) & (df['Data'] <= end_date)]
 # Remover duplicatas com base na 'Data' e 'Título' da reunião
 filtered_df = filtered_df.drop_duplicates(subset=['Data', 'Título'])
 
-# Exibir tabela interativa
+# Exibir tabela interativa com cores e uma boa organização
 st.write(f"Reuniões de {start_date.date()} a {end_date.date()}")
-st.dataframe(filtered_df[['Data', 'Título', 'Participantes']])
+st.dataframe(filtered_df[['Data', 'Título', 'Participantes']], use_container_width=True)
 
-# Se quiser mostrar em formato de gráfico de barras (Número de reuniões por dia)
+# Melhorar o gráfico com um visual mais bonito
 chart = alt.Chart(filtered_df).mark_bar().encode(
     x='Data:T',
     y='count():Q',
-    color='Título:N'
+    color='Título:N',
+    tooltip=['Data:T', 'count():Q', 'Título:N']
 ).properties(
-    title="Número de Reuniões por Dia"
+    title="Número de Reuniões por Dia",
+    width=700,
+    height=400
+).configure_view(
+    strokeWidth=0  # Retira a borda do gráfico
 )
 
 st.altair_chart(chart, use_container_width=True)
 
-# Adicionar a visualização de participantes
+# Melhorar a exibição dos participantes
 st.write("Detalhamento dos Participantes:")
 for index, row in filtered_df.iterrows():
     st.write(f"**{row['Título']}** em {row['Data'].strftime('%d/%m/%Y')}:")
@@ -46,3 +51,20 @@ for index, row in filtered_df.iterrows():
     for participante in participantes:
         st.write(f"- {participante.strip()}")
     st.write("---")
+
+# Adicionando um toque de estilo
+st.markdown("""
+    <style>
+        .streamlit-expanderHeader {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3D5AFE;
+        }
+        .css-1v3fvcr {
+            background-color: #F1F1F1;
+        }
+        .css-1c6zqme {
+            background-color: #E0E0E0;
+        }
+    </style>
+""", unsafe_allow_html=True)
