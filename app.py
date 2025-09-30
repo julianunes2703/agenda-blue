@@ -6,32 +6,33 @@ CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsw_WO1DoVu76FQ7rhs1
 df = pd.read_csv(CSV_URL)
 
 # Verificar as primeiras linhas para garantir que os dados foram carregados corretamente
-st.write(df.head())
+st.write(df.head())  # Verifique os dados carregados
 
-# Filtrar os dados pela data selecionada
+# Convertendo a coluna 'Data' para o tipo datetime
+df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+
+# Filtro de data (exemplo: escolher um dia específico)
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("2025-09-30"))
 
-# Verifique se os nomes das colunas estão corretos
-df['data'] = pd.to_datetime(df['data'])  # Certifique-se de que a data está no formato correto
-
 # Filtrando o DataFrame para a data escolhida
-df_filtrado = df[df['data'] == data_selecionada.strftime('%Y-%m-%d')]
+df_filtrado = df[df['Data'] == data_selecionada]
 
 # Mostrar as reuniões filtradas
 st.subheader(f'Reuniões para o dia {data_selecionada}')
-st.write(df_filtrado[['data', 'titulo', 'inicio', 'fim', 'empresa', 'funcionario', 'participantes', 'link']])
-
-# Exibir gráfico de reuniões por empresa
-st.subheader('Reuniões por Empresa')
-reunioes_por_empresa = df_filtrado['empresa'].value_counts()
-st.bar_chart(reunioes_por_empresa)
+st.write(df_filtrado[['Data', 'Títulos', 'Funcionário', 'Participantes']])
 
 # Exibir gráfico de reuniões por funcionário
 st.subheader('Reuniões por Funcionário')
-reunioes_por_funcionario = df_filtrado['funcionario'].value_counts()
+reunioes_por_funcionario = df_filtrado['Funcionário'].value_counts()
 st.bar_chart(reunioes_por_funcionario)
 
-# Exibição de links para as reuniões
+# Exibir gráfico de reuniões por participantes (empresas)
+st.subheader('Reuniões por Participantes (Empresas)')
+reunioes_por_participante = df_filtrado['Participantes'].value_counts()
+st.bar_chart(reunioes_por_participante)
+
+# Exibição de links para as reuniões (se houver)
 st.subheader('Links das Reuniões')
 for _, row in df_filtrado.iterrows():
-    st.write(f"Reunião: {row['titulo']} | Link: {row['link']}")
+    # Aqui você pode adicionar uma coluna de links, se ela existir no seu CSV
+    st.write(f"Reunião: {row['Títulos']} | Participantes: {row['Participantes']}")
