@@ -65,11 +65,6 @@ else:
     reunioes_funcionarios_internos = df_filtrado[df_filtrado['ÉFuncionario']]['Funcionário'].value_counts()
     st.bar_chart(reunioes_funcionarios_internos)
 
-    # Externos
-    st.subheader("🌐 Reuniões por Participante Externo")
-    reunioes_externos = df_filtrado[~df_filtrado['ÉFuncionario']]['Participantes'].value_counts()
-    st.bar_chart(reunioes_externos)
-
     # Empresas detectadas
     st.subheader("🏢 Reuniões por Empresa (detectada no título)")
     reunioes_por_empresa = df_filtrado['EmpresaDetectada'].value_counts()
