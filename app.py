@@ -31,7 +31,7 @@ empresas_alias = {
     "Itatex": ["Itatex"],
     "Vida Animal": ["Vida Animal", "Clínica Vida Animal"],
     "Inme": ["Inme"],
-    "Supermecado Mana": ["Supermecado Mana", "Mana", "MANÁ", "Maná"],
+    "Supermecado Mana": ["Supermecado Mana", "Mana"],
     "JLP": ["JLP"],
     "Binotto": ["Binotto"],
     "Rodomoto": ["Rodomoto"],
@@ -60,13 +60,15 @@ funcionarios = [
 # HELPERS
 # =========================
 def identificar_empresa(titulo, empresas_alias):
+    """Detecta empresa pelo título usando aliases. 
+       Se não encontrar, retorna 'Consulting Blue (Interna)'."""
     titulo_lower = str(titulo or "").lower()
     for empresa, aliases in empresas_alias.items():
         for alias in aliases:
             padrao = r"\b" + re.escape(alias.lower()) + r"\b"
             if re.search(padrao, titulo_lower):
                 return empresa
-    return "Consulting Blue(Interna)"  # fallback para internas
+    return "Consulting Blue (Interna)"  # fallback para reuniões internas
 
 def nome_curto(email: str):
     return email.split("@")[0].replace(".", " ").title()
@@ -102,7 +104,7 @@ df["ÉFuncionario"] = df["Funcionário"].str.contains("consultingblue.com.br", c
 # =========================
 # DASHBOARD
 # =========================
-st.title("📊 Dashboard de Reuniões - Consulting Blue")
+st.title("📊 Dashboard de Reuniões - Consultoria Empresarial")
 
 # filtro de data
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("today"))
@@ -122,33 +124,27 @@ st.bar_chart(df_dia[df_dia["ÉFuncionario"]]["Funcionário"].value_counts())
 
 st.subheader("🏢 Reuniões por Empresa (detectada no título)")
 st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
+
 # =========================
-# RESUMO POR EMPRESA (somente clientes, internas só no gráfico)
+# RESUMO POR EMPRESA (clientes apenas)
 # =========================
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
-# normalizar nomes de empresas para comparar
-internas_labels = ["não identificada", "consulting blue (interna)"]
+# filtrar fora as internas
+df_clientes = df_dia[df_dia["EmpresaDetectada"] != "Consulting Blue (Interna)"]
 
-for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
-    # normaliza string
-    empresa_norm = str(empresa).strip().lower()
-
-    # pula se for reunião interna
-    if empresa_norm in internas_labels:
-        continue  
-
-    internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
-    participantes = grupo["Participantes"].unique()
-    internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
-    st.markdown(
-        f"**{empresa}** → {len(grupo)} reuniões  \n"
-        f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
-        f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
-    )
-
-
-
+if df_clientes.empty:
+    st.write("Nenhuma reunião com clientes encontrada neste dia.")
+else:
+    for empresa, grupo in df_clientes.groupby("EmpresaDetectada"):
+        internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
+        participantes = grupo["Participantes"].unique()
+        internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
+        st.markdown(
+            f"**{empresa}** → {len(grupo)} reuniões  \n"
+            f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
+            f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
+        )
 
 # =========================
 # CONTAGEM DE REUNIÕES POR FUNCIONÁRIO
