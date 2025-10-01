@@ -3,18 +3,43 @@ import pandas as pd
 import re
 
 # =========================
-# LISTA DE EMPRESAS (para detectar cliente pelo título)
+# ALIASES DAS EMPRESAS
 # =========================
-empresas = [
-    "Anjos distribuidoras", "Idroove", "B&C Transportes", "MPA", "Midas Marmoraria", "Uanga", "Decor Fest",
-    "Arcante", "MadRock", "Porquitos", "IPP", "Laticínios Sampa Rio", "Shiny Toys", "Minghini Cuccina",
-    "Masterlar", "Imagine Hidro & Gás", "SP Aluminio", "Ferragens Brasil", "POS", "Alpha Quality",
-    "Mithra Cherici", "Indiana", "Itatex", "Vida Animal", "Inme", "Supermecado Mana", "JLP",
-    "Binotto", "Rodomoto", "DGosto", "MANÁ", "Midas", "Mana", "SP Alumínio", "Maná"
-]
+empresas_alias = {
+    "Anjos distribuidoras": ["Anjos distribuidoras", "Anjos"],
+    "Idroove": ["Idroove"],
+    "B&C Transportes": ["B&C Transportes", "BC Transportes"],
+    "MPA": ["MPA", "M.P.A", "Mpa Consultoria"],
+    "Midas Marmoraria": ["Midas Marmoraria", "Midas"],
+    "Uanga": ["Uanga"],
+    "Decor Fest": ["Decor Fest", "DecorFest"],
+    "Arcante": ["Arcante"],
+    "MadRock": ["MadRock", "Mad Rock"],
+    "Porquitos": ["Porquitos"],
+    "IPP": ["IPP", "Instituto de Pesquisa Paulista"],
+    "Laticínios Sampa Rio": ["Laticínios Sampa Rio", "Sampa Rio"],
+    "Shiny Toys": ["Shiny Toys"],
+    "Minghini Cuccina": ["Minghini Cuccina", "Minghini"],
+    "Masterlar": ["Masterlar"],
+    "Imagine Hidro & Gás": ["Imagine Hidro", "Imagine Hidro & Gás"],
+    "SP Aluminio": ["SP Aluminio", "São Paulo Aluminio"],
+    "Ferragens Brasil": ["Ferragens Brasil", "Ferragens"],
+    "POS": ["POS"],
+    "Alpha Quality": ["Alpha Quality", "Alpha"],
+    "Mithra Cherici": ["Mithra Cherici", "Mithra"],
+    "Indiana": ["Indiana"],
+    "Itatex": ["Itatex"],
+    "Vida Animal": ["Vida Animal", "Clínica Vida Animal"],
+    "Inme": ["Inme"],
+    "Supermecado Mana": ["Supermecado Mana", "Mana", "MANÁ", "Maná"],
+    "JLP": ["JLP"],
+    "Binotto": ["Binotto"],
+    "Rodomoto": ["Rodomoto"],
+    "DGosto": ["DGosto", "De Gosto"],
+}
 
 # =========================
-# LISTA DE FUNCIONÁRIOS (emails)
+# FUNCIONÁRIOS (emails oficiais)
 # =========================
 funcionarios = [
     "fernando@consultingblue.com.br",
@@ -31,28 +56,25 @@ funcionarios = [
     "luma@consultingblue.com.br",
 ]
 
-# helpers
-def identificar_empresa(titulo: str, empresas_lista):
-    t = str(titulo or "").lower()
-    for emp in empresas_lista:
-        if emp.lower() in t:
-            return emp
-    return "Consulting Blue (Interna)"  # reuniões sem cliente no título são internas
-
-def normaliza_email(x: str):
-    return str(x or "").strip().lower()
+# =========================
+# HELPERS
+# =========================
+def identificar_empresa(titulo, empresas_alias):
+    titulo_lower = str(titulo or "").lower()
+    for empresa, aliases in empresas_alias.items():
+        for alias in aliases:
+            padrao = r"\b" + re.escape(alias.lower()) + r"\b"
+            if re.search(padrao, titulo_lower):
+                return empresa
+    return "Consulting Blue (Interna)"  # fallback para internas
 
 def nome_curto(email: str):
-    # pega o que vem antes do @ e capitaliza simples: "fernando" -> "Fernando"
-    user = email.split("@")[0]
-    return user.replace(".", " ").title()
+    return email.split("@")[0].replace(".", " ").title()
 
 def participou_reuniao(row, email):
-    # conta se o email aparece como organizador ou dentro de Participantes
-    eml = re.escape(email)
     return (
-        bool(re.search(eml, str(row.get("Funcionário", "")), flags=re.IGNORECASE)) or
-        bool(re.search(eml, str(row.get("Participantes", "")), flags=re.IGNORECASE))
+        email.lower() in str(row.get("Funcionário", "")).lower()
+        or email.lower() in str(row.get("Participantes", "")).lower()
     )
 
 # =========================
@@ -61,22 +83,20 @@ def participou_reuniao(row, email):
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsw_WO1DoVu76FQ7rhs1S8CPBo0FRQ7VmoCpZBGV9WTsRdZm7TduvnKQnTVKR40vbMzQU3ypTj8Ls7/pub?gid=212895287&single=true&output=csv"
 df = pd.read_csv(CSV_URL)
 
-# saneamento básico
+# garantir colunas
 for col in ["Data", "Títulos", "Funcionário", "Participantes"]:
     if col not in df.columns:
         df[col] = ""
 
 df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
-df["Funcionário"] = df["Funcionário"].astype(str)
-df["Participantes"] = df["Participantes"].astype(str)
 
-# remover duplicatas (mesma data, funcionário e título)
+# remover duplicadas
 df = df.drop_duplicates(subset=["Data", "Funcionário", "Títulos"], keep="first")
 
-# detectar empresa pelo título
-df["EmpresaDetectada"] = df["Títulos"].apply(lambda t: identificar_empresa(t, empresas))
+# detectar empresas com aliases
+df["EmpresaDetectada"] = df["Títulos"].apply(lambda t: identificar_empresa(t, empresas_alias))
 
-# marcar se é funcionário consulting blue
+# marcar funcionários internos
 df["ÉFuncionario"] = df["Funcionário"].str.contains("consultingblue.com.br", case=False, na=False)
 
 # =========================
@@ -93,7 +113,7 @@ if df_dia.empty:
     st.write("Nenhuma reunião encontrada para essa data.")
     st.stop()
 
-# tabela do dia
+# tabela base
 st.dataframe(df_dia[["Data", "Títulos", "Funcionário", "Participantes", "EmpresaDetectada", "ÉFuncionario"]])
 
 # gráficos
@@ -104,7 +124,7 @@ st.subheader("🏢 Reuniões por Empresa (detectada no título)")
 st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
 
 # =========================
-# RESUMO: Funcionários + Participantes por empresa
+# RESUMO POR EMPRESA
 # =========================
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
@@ -119,9 +139,9 @@ for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
     )
 
 # =========================
-# NOVO: CONTAGEM POR FUNCIONÁRIO (lista fornecida)
+# CONTAGEM DE REUNIÕES POR FUNCIONÁRIO
 # =========================
-st.subheader("🧾 Reuniões por funcionário (hoje)")
+st.subheader("🧾 Reuniões por Funcionário (hoje)")
 
 contagens = []
 for em in funcionarios:
@@ -131,7 +151,6 @@ for em in funcionarios:
 df_counts = pd.DataFrame(contagens).sort_values("reunioes", ascending=False).reset_index(drop=True)
 st.dataframe(df_counts[["nome", "email", "reunioes"]])
 
-# também como lista textual estilo "Fernando fez 4 reuniões hoje"
 linhas = []
 for _, row in df_counts.iterrows():
     linhas.append(f"- **{row['nome']}** fez **{row['reunioes']}** reunião(ões) hoje")
