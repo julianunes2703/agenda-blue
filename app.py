@@ -66,7 +66,7 @@ def identificar_empresa(titulo, empresas_alias):
             padrao = r"\b" + re.escape(alias.lower()) + r"\b"
             if re.search(padrao, titulo_lower):
                 return empresa
-    return "Não identificada"  # fallback para internas
+    return "Consulting Blue(Interna)"  # fallback para internas
 
 def nome_curto(email: str):
     return email.split("@")[0].replace(".", " ").title()
@@ -129,6 +129,9 @@ st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
 for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
+    if empresa == "Consulting Blue (Interna)":
+        continue  # não mostra na listagem textual
+
     internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
     participantes = grupo["Participantes"].unique()
     internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
@@ -137,6 +140,7 @@ for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
         f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
         f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
     )
+
 
 # =========================
 # CONTAGEM DE REUNIÕES POR FUNCIONÁRIO
