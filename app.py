@@ -124,23 +124,26 @@ st.subheader("🏢 Reuniões por Empresa (detectada no título)")
 st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
 
 # =========================
-# RESUMO POR EMPRESA (apenas clientes)
+# RESUMO POR EMPRESA (somente clientes, internas só no gráfico)
 # =========================
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
-# percorre apenas empresas diferentes de "Consulting Blue (Interna)"
-for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
-    if empresa.strip().lower() in ["não identificada", "consulting blue (interna)"]:
-        continue  # pula reuniões internas
+# cria dataframe só com empresas diferentes de internas
+df_clientes = df_dia[~df_dia["EmpresaDetectada"].isin(["Não identificada", "Consulting Blue (Interna)"])]
 
-    internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
-    participantes = grupo["Participantes"].unique()
-    internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
-    st.markdown(
-        f"**{empresa}** → {len(grupo)} reuniões  \n"
-        f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
-        f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
-    )
+if df_clientes.empty:
+    st.write("Nenhuma reunião com clientes encontrada neste dia.")
+else:
+    for empresa, grupo in df_clientes.groupby("EmpresaDetectada"):
+        internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
+        participantes = grupo["Participantes"].unique()
+        internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
+        st.markdown(
+            f"**{empresa}** → {len(grupo)} reuniões  \n"
+            f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
+            f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
+        )
+
 
 
 
