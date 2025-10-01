@@ -122,27 +122,30 @@ st.bar_chart(df_dia[df_dia["ÉFuncionario"]]["Funcionário"].value_counts())
 
 st.subheader("🏢 Reuniões por Empresa (detectada no título)")
 st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
-
 # =========================
 # RESUMO POR EMPRESA (somente clientes, internas só no gráfico)
 # =========================
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
-# cria dataframe só com empresas diferentes de internas
-df_clientes = df_dia[~df_dia["EmpresaDetectada"].isin(["Não identificada", "Consulting Blue (Interna)"])]
+# normalizar nomes de empresas para comparar
+internas_labels = ["não identificada", "consulting blue (interna)"]
 
-if df_clientes.empty:
-    st.write("Nenhuma reunião com clientes encontrada neste dia.")
-else:
-    for empresa, grupo in df_clientes.groupby("EmpresaDetectada"):
-        internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
-        participantes = grupo["Participantes"].unique()
-        internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
-        st.markdown(
-            f"**{empresa}** → {len(grupo)} reuniões  \n"
-            f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
-            f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
-        )
+for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
+    # normaliza string
+    empresa_norm = str(empresa).strip().lower()
+
+    # pula se for reunião interna
+    if empresa_norm in internas_labels:
+        continue  
+
+    internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
+    participantes = grupo["Participantes"].unique()
+    internos_fmt = [f"**{i}**" for i in internos] if len(internos) else []
+    st.markdown(
+        f"**{empresa}** → {len(grupo)} reuniões  \n"
+        f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
+        f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
+    )
 
 
 
