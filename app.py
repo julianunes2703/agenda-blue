@@ -82,7 +82,7 @@ df["ÉFuncionario"] = df["Funcionário"].str.contains("consultingblue.com.br", c
 # =========================
 # DASHBOARD
 # =========================
-st.title("📊 Dashboard de Reuniões - Consultoria Empresarial")
+st.title("📊 Dashboard de Reuniões - Consulting Blue")
 
 # filtro de data
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("today"))
