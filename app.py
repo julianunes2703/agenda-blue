@@ -40,7 +40,7 @@ df['EmpresaDetectada'] = df['Títulos'].apply(lambda t: identificar_empresa(t, e
 # =========================
 # DASHBOARD STREAMLIT
 # =========================
-st.title("📊 Dashboard de Reuniões - Consultoria Empresarial")
+st.title("📊 Dashboard de Reuniões - Consulting Blue")
 
 # Filtro de data
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("today"))
