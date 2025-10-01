@@ -124,13 +124,14 @@ st.subheader("🏢 Reuniões por Empresa (detectada no título)")
 st.bar_chart(df_dia["EmpresaDetectada"].value_counts())
 
 # =========================
-# RESUMO POR EMPRESA
+# RESUMO POR EMPRESA (apenas clientes)
 # =========================
 st.subheader("📌 Reuniões por Empresa (funcionários internos + participantes)")
 
+# percorre apenas empresas diferentes de "Consulting Blue (Interna)"
 for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
-    if empresa == "Consulting Blue (Interna)":
-        continue  # não mostra na listagem textual
+    if empresa.strip().lower() in ["não identificada", "consulting blue (interna)"]:
+        continue  # pula reuniões internas
 
     internos = grupo[grupo["ÉFuncionario"]]["Funcionário"].str.lower().unique()
     participantes = grupo["Participantes"].unique()
@@ -140,6 +141,7 @@ for empresa, grupo in df_dia.groupby("EmpresaDetectada"):
         f"👩‍💼 **Funcionários internos:** {', '.join(internos_fmt) if internos_fmt else 'Nenhum'}  \n"
         f"🌐 **Participantes (todos):** {', '.join(participantes) if len(participantes) else 'Nenhum'}"
     )
+
 
 
 # =========================
