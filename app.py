@@ -66,7 +66,7 @@ def identificar_empresa(titulo, empresas_alias):
             padrao = r"\b" + re.escape(alias.lower()) + r"\b"
             if re.search(padrao, titulo_lower):
                 return empresa
-    return "Consulting Blue (Interna)"  # fallback para internas
+    return "Não identificada"  # fallback para internas
 
 def nome_curto(email: str):
     return email.split("@")[0].replace(".", " ").title()
