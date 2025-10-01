@@ -10,7 +10,7 @@ empresas = [
     "Arcante", "MadRock", "Porquitos", "IPP", "Laticínios Sampa Rio", "Shiny Toys", "Minghini Cuccina",
     "Masterlar", "Imagine Hidro & Gás", "SP Aluminio", "Ferragens Brasil", "POS", "Alpha Quality",
     "Mithra Cherici", "Indiana", "Itatex", "Vida Animal", "Inme", "Supermecado Mana", "JLP",
-    "Binotto", "Rodomoto", "DGosto"
+    "Binotto", "Rodomoto", "DGosto", "MANÁ", "Midas", "Mana", "SP Alumínio"
 ]
 
 # =========================
