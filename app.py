@@ -18,7 +18,8 @@ def identificar_empresa(titulo, empresas):
     for empresa in empresas:
         if empresa.lower() in titulo_lower:
             return empresa
-    return "Não identificada"
+    return "Consulting Blue (Interna)"
+
 
 
 # =========================
@@ -43,7 +44,7 @@ df['ÉFuncionario'] = df['Funcionário'].str.contains("consultingblue.com.br", c
 # =========================
 # DASHBOARD STREAMLIT
 # =========================
-st.title("📊 Dashboard de Reuniões - Consultoria Empresarial")
+st.title("📊 Dashboard de Reuniões - Consulting Blue")
 
 # Filtro de data
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("today"))
