@@ -31,7 +31,7 @@ empresas_alias = {
     "Itatex": ["Itatex"],
     "Vida Animal": ["Vida Animal", "Clínica Vida Animal"],
     "Inme": ["Inme"],
-    "Supermecado Mana": ["Supermecado Mana", "Mana"],
+    "Supermecado Mana": ["Supermecado Mana", "Mana", "Maná", "MANÁ"],
     "JLP": ["JLP"],
     "Binotto": ["Binotto"],
     "Rodomoto": ["Rodomoto"],
