@@ -18,7 +18,7 @@ def identificar_empresa(titulo, empresas):
     for empresa in empresas:
         if empresa.lower() in titulo_lower:
             return empresa
-    return "Consulting Blue (Interna)"
+    return "Não identificada"
 
 
 
