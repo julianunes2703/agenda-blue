@@ -7,9 +7,9 @@ import pandas as pd
 empresas = [
     "Anjos distribuidoras", "Idroove", "B&C Transportes", "MPA", "Midas Marmoraria", "Uanga", "Decor Fest",
     "Arcante", "MadRock", "Porquitos", "IPP", "Laticínios Sampa Rio", "Shiny Toys", "Minghini Cuccina",
-    "Masterlar", "Imagine Hidro & Gás", "SP Alumínio", "Ferragens Brasil", "POS", "Alpha Quality",
+    "Masterlar", "Imagine Hidro & Gás", "SP Aluminio", "Ferragens Brasil", "POS", "Alpha Quality",
     "Mithra Cherici", "Indiana", "Itatex", "Vida Animal", "Inme", "Supermecado Mana", "JLP",
-    "Binotto", "Rodomoto", "DGosto", "MANÁ", "Midas"
+    "Binotto", "Rodomoto", "DGosto"
 ]
 
 # Função para identificar empresa no título da reunião
@@ -36,11 +36,14 @@ df = df.drop_duplicates(subset=['Data', 'Funcionário', 'Títulos'], keep='first
 # Detectar empresas nos títulos
 df['EmpresaDetectada'] = df['Títulos'].apply(lambda t: identificar_empresa(t, empresas))
 
+# Detectar se é funcionário da Consulting Blue
+df['ÉFuncionario'] = df['Funcionário'].str.contains("consultingblue.com.br", case=False, na=False)
+
 
 # =========================
 # DASHBOARD STREAMLIT
 # =========================
-st.title("📊 Dashboard de Reuniões - Consulting Blue")
+st.title("📊 Dashboard de Reuniões - Consultoria Empresarial")
 
 # Filtro de data
 data_selecionada = st.date_input("Selecione a data", pd.to_datetime("today"))
@@ -51,21 +54,32 @@ st.subheader(f"📅 Reuniões em {data_selecionada.strftime('%d/%m/%Y')}")
 if df_filtrado.empty:
     st.write("Nenhuma reunião encontrada para essa data.")
 else:
-    st.write(df_filtrado[['Data', 'Títulos', 'Funcionário', 'Participantes', 'EmpresaDetectada']])
+    st.write(df_filtrado[['Data', 'Títulos', 'Funcionário', 'Participantes', 'EmpresaDetectada', 'ÉFuncionario']])
 
-    # Gráfico: reuniões por funcionário
-    st.subheader("👩‍💼 Reuniões por Funcionário")
-    reunioes_por_funcionario = df_filtrado['Funcionário'].value_counts()
-    st.bar_chart(reunioes_por_funcionario)
+    # =========================
+    # Gráficos separados
+    # =========================
 
-    # Gráfico: reuniões por empresa detectada
+    # Funcionários internos
+    st.subheader("👩‍💼 Reuniões por Funcionário (Consulting Blue)")
+    reunioes_funcionarios_internos = df_filtrado[df_filtrado['ÉFuncionario']]['Funcionário'].value_counts()
+    st.bar_chart(reunioes_funcionarios_internos)
+
+    # Externos
+    st.subheader("🌐 Reuniões por Participante Externo")
+    reunioes_externos = df_filtrado[~df_filtrado['ÉFuncionario']]['Participantes'].value_counts()
+    st.bar_chart(reunioes_externos)
+
+    # Empresas detectadas
     st.subheader("🏢 Reuniões por Empresa (detectada no título)")
     reunioes_por_empresa = df_filtrado['EmpresaDetectada'].value_counts()
     st.bar_chart(reunioes_por_empresa)
 
-    # Resumo: funcionários que participaram por empresa
-    st.subheader("📌 Funcionários por Empresa (reuniões do dia)")
+    # =========================
+    # Resumo textual
+    # =========================
+    st.subheader("📌 Funcionários Consulting Blue por Empresa")
     for empresa, grupo in df_filtrado.groupby('EmpresaDetectada'):
-        if empresa != "Não identificada":
-            funcionarios = grupo['Funcionário'].unique()
-            st.write(f"**{empresa}** → {len(grupo)} reuniões → Funcionários: {', '.join(funcionarios)}")
+        internos = grupo[grupo['ÉFuncionario']]['Funcionário'].unique()
+        if empresa != "Não identificada" and len(internos) > 0:
+            st.write(f"**{empresa}** → {len(grupo)} reuniões → Funcionários: {', '.join(internos)}")
